@@ -15,7 +15,18 @@ export interface BookingOverrides {
 }
 
 export type InvalidBookingScenario =
-  'missing-firstname' | 'invalid-totalprice' | 'invalid-bookingdates' | 'empty-payload';
+  | 'missing-firstname'
+  | 'missing-lastname'
+  | 'missing-totalprice'
+  | 'missing-depositpaid'
+  | 'missing-bookingdates'
+  | 'invalid-firstname'
+  | 'invalid-lastname'
+  | 'invalid-totalprice'
+  | 'invalid-depositpaid'
+  | 'invalid-bookingdates'
+  | 'invalid-date'
+  | 'empty-payload';
 
 export function createBooking(overrides: BookingOverrides = {}): BookingRequest {
   const uniqueSuffix = randomUUID();
@@ -40,10 +51,29 @@ export function createInvalidBooking(scenario: InvalidBookingScenario): InvalidB
   switch (scenario) {
     case 'missing-firstname':
       return omit(createBooking(), 'firstname');
+    case 'missing-lastname':
+      return omit(createBooking(), 'lastname');
+    case 'missing-totalprice':
+      return omit(createBooking(), 'totalprice');
+    case 'missing-depositpaid':
+      return omit(createBooking(), 'depositpaid');
+    case 'missing-bookingdates':
+      return omit(createBooking(), 'bookingdates');
+    case 'invalid-firstname':
+      return { ...createBooking(), firstname: 123 };
+    case 'invalid-lastname':
+      return { ...createBooking(), lastname: 123 };
     case 'invalid-totalprice':
       return { ...createBooking(), totalprice: 'not-a-number' };
+    case 'invalid-depositpaid':
+      return { ...createBooking(), depositpaid: 'not-a-boolean' };
     case 'invalid-bookingdates':
       return { ...createBooking(), bookingdates: { checkin: 'invalid-date' } };
+    case 'invalid-date':
+      return {
+        ...createBooking(),
+        bookingdates: { checkin: 'not-a-date', checkout: 'not-a-date' }
+      };
     case 'empty-payload':
       return {};
   }

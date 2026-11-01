@@ -9,6 +9,11 @@
   },
   "scripts": {
     "test": "playwright test",
+    "test:auth": "playwright test tests/auth",
+    "test:bookings": "playwright test tests/bookings",
+    "test:negative": "playwright test tests/negative",
+    "test:contracts": "playwright test tests/contracts",
+    "test:health": "playwright test tests/health",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
