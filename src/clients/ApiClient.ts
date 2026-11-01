@@ -52,10 +52,7 @@ export class ApiClient {
     data?: unknown,
     options?: ApiRequestOptions
   ): Promise<APIResponse<T>> {
-    const headers: Record<string, string> = {
-      ...this.defaultHeaders,
-      ...options?.headers
-    };
+    const headers = this.mergeHeaders(options?.headers);
 
     if (options?.token !== undefined) {
       headers.Cookie = `token=${options.token}`;
@@ -75,5 +72,19 @@ export class ApiClient {
 
   private buildUrl(path: string): string {
     return new URL(path, `${this.config.baseUrl}/`).toString();
+  }
+
+  private mergeHeaders(overrides: Readonly<Record<string, string>> | undefined) {
+    const headers = new Map<string, { name: string; value: string }>();
+
+    for (const [name, value] of Object.entries(this.defaultHeaders)) {
+      headers.set(name.toLowerCase(), { name, value });
+    }
+
+    for (const [name, value] of Object.entries(overrides ?? {})) {
+      headers.set(name.toLowerCase(), { name, value });
+    }
+
+    return Object.fromEntries([...headers.values()].map(({ name, value }) => [name, value]));
   }
 }

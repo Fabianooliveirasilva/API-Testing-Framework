@@ -1,16 +1,9 @@
 import { createBooking } from './booking.factory.js';
+import { randomUUID } from 'node:crypto';
 
-export function createDefaultBooking() {
+export function createIndependentBooking() {
   return createBooking({
-    firstname: 'Default',
-    lastname: 'Booking'
+    firstname: `Test-${randomUUID()}`,
+    lastname: `Booking-${randomUUID()}`
   });
-}
-
-export function createDefaultBookingFilters() {
-  const booking = createDefaultBooking();
-  return {
-    firstname: booking.firstname,
-    lastname: booking.lastname
-  } as const;
 }

@@ -3,6 +3,7 @@ import type {
   BookingRequest,
   InvalidBookingPayload
 } from '../types/booking.types.js';
+import { randomUUID } from 'node:crypto';
 
 export interface BookingOverrides {
   readonly firstname?: string;
@@ -16,11 +17,8 @@ export interface BookingOverrides {
 export type InvalidBookingScenario =
   'missing-firstname' | 'invalid-totalprice' | 'invalid-bookingdates' | 'empty-payload';
 
-let sequence = 0;
-
 export function createBooking(overrides: BookingOverrides = {}): BookingRequest {
-  sequence += 1;
-  const uniqueSuffix = `${Date.now()}-${sequence}`;
+  const uniqueSuffix = randomUUID();
   const bookingdates: BookingDates = {
     checkin: overrides.bookingdates?.checkin ?? '2025-01-01',
     checkout: overrides.bookingdates?.checkout ?? '2025-01-10'

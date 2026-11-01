@@ -27,38 +27,48 @@ export class BookingClient {
   }
 
   public createBooking(
-    payload: BookingRequest | InvalidBookingPayload
+    payload: BookingRequest | InvalidBookingPayload,
+    options?: ApiRequestOptions
   ): Promise<APIResponse<BookingResponse>> {
-    return this.apiClient.post<BookingResponse>('/booking', payload);
+    return this.apiClient.post<BookingResponse>('/booking', payload, options);
   }
 
   public updateBooking(
     bookingId: number | string,
     payload: BookingRequest,
-    token?: string
+    tokenOrOptions?: string | ApiRequestOptions
   ): Promise<APIResponse<BookingRequest>> {
     return this.apiClient.put<BookingRequest>(
       `/booking/${encodeURIComponent(String(bookingId))}`,
       payload,
-      { token }
+      toRequestOptions(tokenOrOptions)
     );
   }
 
   public partiallyUpdateBooking(
     bookingId: number | string,
     payload: Partial<BookingRequest>,
-    token?: string
+    tokenOrOptions?: string | ApiRequestOptions
   ): Promise<APIResponse<BookingRequest>> {
     return this.apiClient.patch<BookingRequest>(
       `/booking/${encodeURIComponent(String(bookingId))}`,
       payload,
-      { token }
+      toRequestOptions(tokenOrOptions)
     );
   }
 
-  public deleteBooking(bookingId: number | string, token?: string): Promise<APIResponse<unknown>> {
+  public deleteBooking(
+    bookingId: number | string,
+    tokenOrOptions?: string | ApiRequestOptions
+  ): Promise<APIResponse<unknown>> {
     return this.apiClient.delete<unknown>(`/booking/${encodeURIComponent(String(bookingId))}`, {
-      token
+      ...toRequestOptions(tokenOrOptions)
     });
   }
+}
+
+function toRequestOptions(
+  tokenOrOptions: string | ApiRequestOptions | undefined
+): ApiRequestOptions {
+  return typeof tokenOrOptions === 'string' ? { token: tokenOrOptions } : (tokenOrOptions ?? {});
 }
