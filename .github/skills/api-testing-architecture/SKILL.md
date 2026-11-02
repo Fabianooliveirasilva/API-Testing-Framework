@@ -2,38 +2,20 @@
 
 ## Purpose
 
-Keep the framework modular, reusable, type-safe, and aligned with its documented architecture.
+Preserve the framework's strict, reusable separation of clients, fixtures, data, schemas,
+utilities, tests, and documentation.
 
-## When to use
+## Project rules
 
-Use this skill when creating or changing clients, fixtures, configuration, data factories, schemas, utilities, or test structure.
-
-## Instructions
-
-- Keep API communication in client classes and assertions in tests.
-- Keep fixtures responsible for lifecycle and dependency composition.
-- Keep test data, schemas, and shared utilities in their respective layers.
-- Prefer small, reusable components over speculative abstractions.
-- Preserve strict TypeScript configuration and existing public interfaces when practical.
-
-## Best practices
-
-- Use explicit types and meaningful names.
-- Keep tests independent and avoid global mutable state.
-- Reuse common request configuration.
-- Document structural changes.
-
-## Anti-patterns
-
-- Duplicating request logic across tests.
-- Placing assertions in API clients.
-- Sharing mutable resources between tests.
-- Introducing abstractions without a concrete use case.
-
-## Review checklist
-
-- Are responsibilities separated?
-- Is the implementation type-safe?
-- Are tests independent?
-- Are errors explicit and actionable?
-- Does the change preserve existing behavior?
+- Clients perform HTTP communication only; tests own assertions.
+- Fixtures own lifecycle, authentication composition, and cleanup. Booking creation in tests goes
+  through `bookingTracker.create()` so IDs are tracked before assertions.
+- Factories return fresh unique data. Never share mutable bookings or target resources created by
+  another test.
+- Schemas and `assertValid<T>()` provide type/contract validation; functional tests should not
+  duplicate contract coverage unnecessarily.
+- Handle observed-vs-expected behavior explicitly with `[observed]` and `known-deviation`.
+- Do not assert shared-list counts/content, leak token-bearing headers, or add speculative
+  abstractions.
+- Preserve strict TypeScript and run the project's typecheck, lint, format check, and Playwright
+  suites after changes.

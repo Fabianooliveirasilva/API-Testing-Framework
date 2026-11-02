@@ -2,36 +2,17 @@
 
 ## Purpose
 
-Review API tests and framework code for correctness, maintainability, and reliability.
+Review this project's API clients, fixtures, schemas, tests, and documentation before merging.
 
-## When to use
+## Checklist
 
-Use this skill before merging changes to clients, fixtures, tests, schemas, or CI.
-
-## Instructions
-
-- Review correctness, assertion quality, type safety, and API contract alignment.
-- Check independence, cleanup, flakiness risks, and duplicated code.
-- Check security handling and CI compatibility.
-- Verify documentation matches implemented coverage.
-
-## Best practices
-
-- Prefer focused tests with actionable failure messages.
-- Reuse established helpers and patterns.
-- Run typecheck, lint, formatting, and relevant tests.
-
-## Anti-patterns
-
-- Ignoring failed validation.
-- Relying on execution order or arbitrary waits.
-- Adding broad catches or success-shaped fallbacks.
-- Claiming coverage that was not executed.
-
-## Review checklist
-
-- Is the behavior tested accurately?
-- Are failures explicit?
-- Are tests deterministic and independent?
-- Are credentials and tokens protected?
-- Does CI execute the same quality gates?
+- Confirm every mutating test targets a booking created by that test through `bookingTracker.create`
+  or `createdBooking`; fixed IDs are only for read-only/observed missing-resource checks.
+- Confirm cleanup annotations report `tracked`, `deleted`, `alreadyGone`, and `failed`, with
+  `failed=0`.
+- Check observed-vs-expected wording, `[observed]` titles, and `known-deviation` annotations.
+- Reject assertions that depend on shared-list counts/content, ordering, sleeps, or hidden retries.
+- Check type safety, Arrange/Act/Assert structure, unique factory data, and complete assertions.
+- Check that credentials and token-bearing headers are never logged or committed.
+- Run typecheck, lint, format check, normal tests, and the required repeated suite; report real
+  output only.

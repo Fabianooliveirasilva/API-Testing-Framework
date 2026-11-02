@@ -9,8 +9,9 @@ execution. Tests consume typed clients and utilities through Playwright fixtures
 
 - **Configuration**: `src/config/environment.ts` loads `.env`, validates the base URL, timeout, and
   credential pairing, and keeps credentials optional for unauthenticated scenarios.
-- **Global setup**: `src/config/global-setup.ts` validates that `API_USERNAME` and `API_PASSWORD`
-  are available together once before the test run and reports one clear configuration error.
+- **Global setup**: `src/config/global-setup.ts` loads the strict environment validation without
+  blocking public unauthenticated tests. Authenticated fixtures report a clear missing-credentials
+  error when `API_USERNAME` and `API_PASSWORD` are unavailable.
 - **Types**: `src/types/` defines request, response, JSON, and authentication contracts.
 - **API clients**: `src/clients/ApiClient.ts` centralizes Playwright request execution. `AuthClient`
   handles token creation and response handling; `BookingClient` maps booking endpoints to typed
@@ -24,8 +25,9 @@ execution. Tests consume typed clients and utilities through Playwright fixtures
 - **Fixtures**: `src/fixtures/api.fixture.ts` creates per-test API clients from Playwright's
   request fixture. `authToken` is created lazily only when requested. `bookingTracker` tracks
   resources created by a test and removes them during teardown; cleanup tolerates 404 and 405
-  responses, annotates `tracked=N deleted=M`, and aggregates authentication or unexpected DELETE
-  failures without logging tokens or full error objects. `createdBooking` creates one tracked
+  responses, annotates `tracked=N deleted=D alreadyGone=A failed=F`, and aggregates authentication
+  or unexpected DELETE failures without logging tokens or full error objects. `create()` tracks
+  returned IDs before assertions, and `createdBooking` creates one tracked
   booking.
 
 ## Request flow
@@ -58,11 +60,13 @@ npx newman run postman/api-testing-collection.json -e postman/environments/local
 
 ## Authentication
 
-Credentials are read only from environment variables. Authentication responses are checked for a
-non-empty token before a token is returned. Invalid authentication responses are represented by
-their documented `reason` field when available; the client does not log tokens or credentials.
-The framework uses the Restful Booker cookie token mechanism. Traces are disabled because request
-headers may contain authentication tokens.
+Credentials are read only from environment variables. Public tests can start without credentials;
+`authToken` requests them lazily and reports a clear configuration error when they are missing.
+Authentication responses are checked for a non-empty token, and invalid responses are asserted in
+authentication tests without logging credentials or tokens. Protected booking operations use the
+Restful Booker cookie token mechanism; `Authorization: Basic` remains an explicitly annotated
+observed deviation because it is not described by the official Update Booking apidoc. Traces are
+disabled because request headers may contain authentication tokens.
 
 `ApiClient` owns base URL and request timeout configuration, while Playwright configuration owns
 test timeout, assertion timeout, worker count, and reporters. Request headers are normalized

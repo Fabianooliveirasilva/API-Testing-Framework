@@ -14,24 +14,6 @@ test('should delete an existing booking and return not found afterwards', async 
   expect(await retrieved.text()).toBe('Not Found');
 });
 
-for (const [title, token] of [
-  ['without a token', undefined],
-  ['with an invalid token', 'invalid-token']
-] as const) {
-  test(`should reject DELETE ${title} without changing the booking`, async ({
-    bookingClient,
-    createdBooking
-  }) => {
-    const response = await bookingClient.deleteBooking(createdBooking.id, token);
-    const retrieved = await bookingClient.getBookingById(createdBooking.id);
-
-    expect(response.status()).toBe(403);
-    expect(await response.text()).toBe('Forbidden');
-    expect(retrieved.status()).toBe(200);
-    expect(await retrieved.json()).toEqual(createdBooking.booking);
-  });
-}
-
 test('[observed] should return method not allowed when deleting a non-existing booking', async ({
   bookingClient,
   authToken

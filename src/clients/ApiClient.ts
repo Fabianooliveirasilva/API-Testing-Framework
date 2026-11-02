@@ -14,51 +14,39 @@ export class ApiClient {
     private readonly config: EnvironmentConfig
   ) {}
 
-  public get<T = unknown>(path: string, options?: ApiRequestOptions): Promise<APIResponse<T>> {
-    return this.request<T>('GET', path, undefined, options);
+  public get(path: string, options?: ApiRequestOptions): Promise<APIResponse> {
+    return this.request('GET', path, undefined, options);
   }
 
-  public post<T = unknown>(
-    path: string,
-    data?: unknown,
-    options?: ApiRequestOptions
-  ): Promise<APIResponse<T>> {
-    return this.request<T>('POST', path, data, options);
+  public post(path: string, data?: unknown, options?: ApiRequestOptions): Promise<APIResponse> {
+    return this.request('POST', path, data, options);
   }
 
-  public put<T = unknown>(
-    path: string,
-    data?: unknown,
-    options?: ApiRequestOptions
-  ): Promise<APIResponse<T>> {
-    return this.request<T>('PUT', path, data, options);
+  public put(path: string, data?: unknown, options?: ApiRequestOptions): Promise<APIResponse> {
+    return this.request('PUT', path, data, options);
   }
 
-  public patch<T = unknown>(
-    path: string,
-    data?: unknown,
-    options?: ApiRequestOptions
-  ): Promise<APIResponse<T>> {
-    return this.request<T>('PATCH', path, data, options);
+  public patch(path: string, data?: unknown, options?: ApiRequestOptions): Promise<APIResponse> {
+    return this.request('PATCH', path, data, options);
   }
 
-  public delete<T = unknown>(path: string, options?: ApiRequestOptions): Promise<APIResponse<T>> {
-    return this.request<T>('DELETE', path, undefined, options);
+  public delete(path: string, options?: ApiRequestOptions): Promise<APIResponse> {
+    return this.request('DELETE', path, undefined, options);
   }
 
-  public request<T>(
+  public request(
     method: string,
     path: string,
     data?: unknown,
     options?: ApiRequestOptions
-  ): Promise<APIResponse<T>> {
+  ): Promise<APIResponse> {
     const headers = this.mergeHeaders(options?.headers);
 
     if (options?.token !== undefined) {
       headers.Cookie = `token=${options.token}`;
     }
 
-    return this.requestContext.fetch<T>(this.buildUrl(path), {
+    return this.requestContext.fetch(this.buildUrl(path), {
       method,
       headers,
       timeout: this.config.apiTimeout,

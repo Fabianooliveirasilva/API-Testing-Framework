@@ -6,8 +6,8 @@ import type { AuthenticationRequest, AuthenticationResponse } from '../types/aut
 export class AuthClient {
   public constructor(private readonly apiClient: ApiClient) {}
 
-  public createToken(credentials: AuthenticationRequest): Promise<APIResponse<unknown>> {
-    return this.apiClient.post<unknown>('/auth', credentials);
+  public createToken(credentials: AuthenticationRequest): Promise<APIResponse> {
+    return this.apiClient.post('/auth', credentials);
   }
 
   public async getToken(credentials: AuthenticationRequest): Promise<string> {

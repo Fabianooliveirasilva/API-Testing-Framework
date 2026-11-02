@@ -1,25 +1,21 @@
 import { test, expect } from '../../src/fixtures/api.fixture.js';
-import { bookingIdListSchema } from '../../src/schemas/booking-response.schema.js';
-import { bookingSchema } from '../../src/schemas/booking.schema.js';
-import { validateJsonSchema } from '../../src/utils/response-validator.js';
 import { createBooking } from '../../src/data/booking.factory.js';
 import { randomUUID } from 'node:crypto';
 
 test('should return booking IDs as an array', async ({ bookingClient }) => {
   const response = await bookingClient.getAllBookingIds();
-  const validation = await validateJsonSchema(response, bookingIdListSchema);
+  const body: unknown = await response.json();
 
   expect(response.status()).toBe(200);
-  expect(validation.valid, validation.errors.join('; ')).toBe(true);
+  expect(response.headers()['content-type']).toContain('application/json');
+  expect(Array.isArray(body)).toBe(true);
 });
 
 test('should retrieve an existing booking by ID', async ({ bookingClient, createdBooking }) => {
   const response = await bookingClient.getBookingById(createdBooking.id);
-  const validation = await validateJsonSchema(response, bookingSchema);
-  const body = await response.json();
+  const body: unknown = await response.json();
 
   expect(response.status()).toBe(200);
-  expect(validation.valid, validation.errors.join('; ')).toBe(true);
   expect(body).toEqual(createdBooking.booking);
 });
 
@@ -35,17 +31,10 @@ test('should filter bookings by unique firstname and lastname', async ({
   bookingTracker
 }) => {
   const payload = createBooking();
-  const created = await bookingClient.createBooking(payload);
-  const body = (await created.json()) as { bookingid?: number };
+  const { response: created, id } = await bookingTracker.create(payload);
 
   expect(created.status()).toBe(200);
-  expect(typeof body.bookingid).toBe('number');
-
-  if (typeof body.bookingid !== 'number') {
-    return;
-  }
-
-  bookingTracker.track(body.bookingid);
+  expect(id).toEqual(expect.any(Number));
   for (const [field, value] of [
     ['firstname', payload.firstname],
     ['lastname', payload.lastname]
@@ -54,8 +43,52 @@ test('should filter bookings by unique firstname and lastname', async ({
     const ids = (await response.json()) as Array<{ bookingid: number }>;
 
     expect(response.status()).toBe(200);
-    expect(ids.some((item) => item.bookingid === body.bookingid)).toBe(true);
+    expect(ids.every((item) => Number.isInteger(item.bookingid))).toBe(true);
+    if (field === 'firstname') {
+      expect(ids).toEqual([{ bookingid: id }]);
+    } else {
+      expect(ids).toContainEqual({ bookingid: id });
+    }
   }
+});
+
+for (const [field, value] of [
+  ['checkin', '2025-01-01'],
+  ['checkout', '2025-01-10']
+] as const) {
+  test(`should filter bookings by ${field}`, async ({ bookingClient, bookingTracker }) => {
+    const { id } = await bookingTracker.create(
+      createBooking({ bookingdates: { checkin: '2025-01-01', checkout: '2025-01-10' } })
+    );
+    const response = await bookingClient.getAllBookingIds({ params: { [field]: value } });
+    const ids = (await response.json()) as Array<{ bookingid: number }>;
+
+    expect(response.status()).toBe(200);
+    expect(ids.every((item) => Number.isInteger(item.bookingid))).toBe(true);
+    if (field === 'checkin') {
+      test.info().annotations.push({
+        type: 'known-deviation',
+        description:
+          'The observed checkin filter returns a valid ID list but does not include the booking created in this test.'
+      });
+      expect(ids).not.toContainEqual({ bookingid: id });
+    } else {
+      expect(ids).toContainEqual({ bookingid: id });
+    }
+  });
+}
+
+test('[observed] should return an internal error for an invalid date filter', async ({
+  bookingClient
+}) => {
+  const response = await bookingClient.getAllBookingIds({ params: { checkin: 'not-a-date' } });
+
+  test.info().annotations.push({
+    type: 'known-deviation',
+    description: 'The API behavior for an invalid checkin filter value is observed, not documented.'
+  });
+  expect(response.status()).toBe(500);
+  expect(await response.text()).toBe('Internal Server Error');
 });
 
 test('should return an empty array for a filter with no matches', async ({ bookingClient }) => {

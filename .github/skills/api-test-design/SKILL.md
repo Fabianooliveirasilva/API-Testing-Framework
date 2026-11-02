@@ -2,37 +2,23 @@
 
 ## Purpose
 
-Design reliable tests that validate real API behavior rather than assumptions.
+Design independent Playwright API tests for the Restful Booker service using evidence from the
+official apidoc and real safe requests.
 
-## When to use
+## Project rules
 
-Use this skill when adding or reviewing API scenarios.
+- Use Arrange, Act, Assert and one primary behavior per test.
+- Treat documented behavior as the expected contract. Mark undocumented service behavior with an
+  `[observed]` title and a `known-deviation` annotation.
+- Every booking POST, including invalid payloads that may return 2xx, must use
+  `bookingTracker.create()` before assertions.
+- Never mutate or delete a booking that the test did not create. Use `createdBooking` or a tracker
+  ID; fixed IDs are allowed only for read-only or observed non-existing ID checks.
+- Do not assert counts or contents of shared public lists. Use unique factory names and assert the
+  relevant created ID/filter result.
+- Preserve authentication through fixtures and cookie token options; never print tokens or headers.
 
-## Instructions
+## Validation
 
-- Organize tests using Arrange, Act, Assert.
-- Cover positive, negative, boundary, and equivalence-partition scenarios where applicable.
-- Validate both HTTP behavior and response content.
-- Create resources dynamically and clean them up when appropriate.
-- Keep one primary behavior per test.
-
-## Best practices
-
-- Use descriptive test names.
-- Prefer data-driven cases for equivalent scenarios.
-- Verify expected behavior against official documentation and safe live responses.
-- Avoid sleeps, ordering dependencies, and arbitrary thresholds.
-
-## Anti-patterns
-
-- Asserting undocumented status codes.
-- Using shared booking IDs between tests.
-- Treating a passing status-only assertion as complete validation.
-- Hiding transient failures with broad retries.
-
-## Review checklist
-
-- Is the scenario meaningful and independent?
-- Are expected results evidence-based?
-- Are status, headers, and body validated appropriately?
-- Are cleanup and transient API behavior considered?
+Assert status, content type, and body when relevant. Record known deviations without presenting a
+5xx response or permissive input acceptance as the desired contract.

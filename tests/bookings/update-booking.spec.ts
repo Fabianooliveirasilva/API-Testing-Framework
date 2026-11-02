@@ -1,6 +1,5 @@
 import { test, expect } from '../../src/fixtures/api.fixture.js';
 import { createBooking } from '../../src/data/booking.factory.js';
-import { validateContentType } from '../../src/utils/response-validator.js';
 import { getValidCredentials } from '../../src/data/users.js';
 
 test('should update all booking fields with a valid token', async ({
@@ -13,23 +12,11 @@ test('should update all booking fields with a valid token', async ({
   const persisted = await bookingClient.getBookingById(createdBooking.id);
 
   expect(response.status()).toBe(200);
-  validateContentType(response);
+  expect(response.headers()['content-type']).toContain('application/json');
   expect(await response.json()).toEqual(payload);
   expect(persisted.status()).toBe(200);
   expect(await persisted.json()).toEqual(payload);
 });
-
-for (const [title, token] of [
-  ['without a token', undefined],
-  ['with an invalid token', 'invalid-token']
-] as const) {
-  test(`should reject a PUT ${title}`, async ({ bookingClient, createdBooking }) => {
-    const response = await bookingClient.updateBooking(createdBooking.id, createBooking(), token);
-
-    expect(response.status()).toBe(403);
-    expect(await response.text()).toBe('Forbidden');
-  });
-}
 
 test('[observed] should accept PUT with Authorization Basic', async ({
   apiClient,
@@ -48,7 +35,7 @@ test('[observed] should accept PUT with Authorization Basic', async ({
   test.info().annotations.push({
     type: 'known-deviation',
     description:
-      'Basic Auth was accepted although the API documentation describes cookie token authentication.'
+      'Basic Auth was accepted although the official Update Booking apidoc section describes cookie token authentication: https://restful-booker.herokuapp.com/apidoc/index.html#api-Booking-UpdateBooking'
   });
   expect(response.status()).toBe(200);
   expect(await bookingClient.getBookingById(createdBooking.id).then((item) => item.json())).toEqual(
@@ -70,6 +57,52 @@ test('[observed] should return method not allowed for PUT on a non-existing book
   expect(await response.text()).toBe('Method Not Allowed');
 });
 
+test('[observed] should return bad request for PUT with a malformed body', async ({
+  apiClient,
+  bookingClient,
+  createdBooking,
+  authToken
+}) => {
+  const response = await apiClient.put(`/booking/${createdBooking.id}`, '{"firstname":', {
+    token: authToken,
+    headers: { 'Content-Type': 'application/json' }
+  });
+  const persisted = await bookingClient.getBookingById(createdBooking.id);
+
+  test.info().annotations.push({
+    type: 'known-deviation',
+    description: 'Malformed PUT bodies are characterized from the observed API response.'
+  });
+  expect(response.status()).toBe(400);
+  expect(persisted.status()).toBe(200);
+  expect(await persisted.json()).toEqual(createdBooking.booking);
+});
+
+test('[observed] should return bad request for PUT with a missing booking field', async ({
+  apiClient,
+  bookingClient,
+  createdBooking,
+  authToken
+}) => {
+  const payload = createdBooking.booking;
+  const missingFirstname = Object.fromEntries(
+    Object.entries(payload).filter(([key]) => key !== 'firstname')
+  );
+  const response = await apiClient.put(`/booking/${createdBooking.id}`, missingFirstname, {
+    token: authToken
+  });
+  const persisted = await bookingClient.getBookingById(createdBooking.id);
+
+  test.info().annotations.push({
+    type: 'known-deviation',
+    description:
+      'PUT with a missing required field is characterized from the observed API response.'
+  });
+  expect(response.status()).toBe(400);
+  expect(persisted.status()).toBe(200);
+  expect(await persisted.json()).toEqual(createdBooking.booking);
+});
+
 for (const [field, value] of [
   ['firstname', 'Patched firstname'],
   ['lastname', 'Patched lastname']
@@ -85,13 +118,49 @@ for (const [field, value] of [
       authToken
     );
     const persisted = await bookingClient.getBookingById(createdBooking.id);
-    const body = (await persisted.json()) as typeof createdBooking.booking;
+    const body: unknown = await persisted.json();
 
     expect(response.status()).toBe(200);
     expect(persisted.status()).toBe(200);
-    expect(body[field]).toBe(value);
-    expect(body.totalprice).toBe(createdBooking.booking.totalprice);
-    expect(body.depositpaid).toBe(createdBooking.booking.depositpaid);
-    expect(body.bookingdates).toEqual(createdBooking.booking.bookingdates);
+    expect(body).toEqual({ ...createdBooking.booking, [field]: value });
   });
 }
+
+test('[observed] should persist an invalid PATCH value', async ({
+  apiClient,
+  bookingClient,
+  createdBooking,
+  authToken
+}) => {
+  const response = await apiClient.patch(
+    `/booking/${createdBooking.id}`,
+    { firstname: 123 },
+    { token: authToken }
+  );
+  const persisted = await bookingClient.getBookingById(createdBooking.id);
+
+  test.info().annotations.push({
+    type: 'known-deviation',
+    description: 'The API accepts and persists a numeric firstname value with HTTP 200.'
+  });
+  expect(response.status()).toBe(200);
+  expect(persisted.status()).toBe(200);
+  expect(await persisted.json()).toEqual({ ...createdBooking.booking, firstname: 123 });
+});
+
+test('[observed] should return method not allowed for PATCH on a non-existing booking', async ({
+  bookingClient,
+  authToken
+}) => {
+  const response = await bookingClient.partiallyUpdateBooking(
+    999999999,
+    { firstname: 'Missing' },
+    authToken
+  );
+
+  test.info().annotations.push({
+    type: 'known-deviation',
+    description: 'The API returned 405 for authenticated PATCH on a non-existing booking.'
+  });
+  expect(response.status()).toBe(405);
+});

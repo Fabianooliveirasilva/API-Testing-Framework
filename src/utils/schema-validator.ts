@@ -37,3 +37,10 @@ function formatErrors(errors: readonly ErrorObject[] | null | undefined): string
     (error) => `${error.instancePath || '/'} ${error.message ?? 'failed schema validation'}`
   );
 }
+
+export function assertValid<T>(value: unknown, schema: AnySchema): asserts value is T {
+  const result = new SchemaValidator().validate(schema, value);
+  if (!result.valid) {
+    throw new Error(`Schema validation failed: ${result.errors.join('; ')}`);
+  }
+}

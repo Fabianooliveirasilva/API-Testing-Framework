@@ -24,7 +24,7 @@ export type InvalidBookingScenario =
   | 'invalid-lastname'
   | 'invalid-totalprice'
   | 'invalid-depositpaid'
-  | 'invalid-bookingdates'
+  | 'missing-checkout'
   | 'invalid-date'
   | 'empty-payload';
 
@@ -37,7 +37,7 @@ export function createBooking(overrides: BookingOverrides = {}): BookingRequest 
 
   return {
     firstname: overrides.firstname ?? `Test-${uniqueSuffix}`,
-    lastname: overrides.lastname ?? 'Booking',
+    lastname: overrides.lastname ?? `Booking-${uniqueSuffix}`,
     totalprice: overrides.totalprice ?? 120,
     depositpaid: overrides.depositpaid ?? true,
     bookingdates,
@@ -67,7 +67,7 @@ export function createInvalidBooking(scenario: InvalidBookingScenario): InvalidB
       return { ...createBooking(), totalprice: 'not-a-number' };
     case 'invalid-depositpaid':
       return { ...createBooking(), depositpaid: 'not-a-boolean' };
-    case 'invalid-bookingdates':
+    case 'missing-checkout':
       return { ...createBooking(), bookingdates: { checkin: 'invalid-date' } };
     case 'invalid-date':
       return {

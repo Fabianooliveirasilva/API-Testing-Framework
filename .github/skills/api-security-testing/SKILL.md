@@ -2,36 +2,18 @@
 
 ## Purpose
 
-Validate authentication, authorization, and input handling safely.
+Safely test authentication, authorization, malformed input, and token handling for Restful Booker.
 
-## When to use
+## Project rules
 
-Use this skill when testing authentication, access control, invalid credentials, tokens, or malformed input.
-
-## Instructions
-
-- Test valid, missing, and invalid credentials or tokens.
-- Keep credentials in environment variables and never expose them in logs.
-- Validate that protected operations reject unauthorized access.
-- Use non-destructive requests against the public practice API.
-- Record security observations without claiming a vulnerability without evidence.
-
-## Best practices
-
-- Use dedicated negative scenarios.
-- Redact secrets from diagnostics.
-- Follow the API documentation and safe testing boundaries.
-
-## Anti-patterns
-
-- Testing intrusive payloads or unauthorized targets.
-- Committing secrets.
-- Treating authentication and authorization as identical.
-- Logging request headers containing tokens.
-
-## Review checklist
-
-- Are secrets protected?
-- Are access restrictions verified?
-- Are negative cases safe and deterministic?
-- Are findings supported by observed behavior?
+- Use environment credentials only for valid-auth scenarios; use fixed fake values for negative
+  authentication cases.
+- Use the framework's cookie token option and never log tokens, credentials, cookies, or full
+  sensitive request/response objects.
+- Verify unauthorized PUT/PATCH/DELETE responses and resource preservation using a booking created
+  by the same test.
+- Never mutate or delete a resource the test did not create. Non-existing IDs are permitted only
+  for observed 404/405 checks that cannot mutate a resource.
+- Mark undocumented or surprising security behavior with `[observed]` and `known-deviation`, and
+  cite the official apidoc when authentication behavior differs.
+- Use non-destructive, bounded requests only; do not claim a vulnerability without evidence.

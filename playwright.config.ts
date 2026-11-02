@@ -1,7 +1,5 @@
 import { defineConfig } from '@playwright/test';
 
-import { environment } from './src/config/environment.js';
-
 export default defineConfig({
   testDir: './tests',
   globalSetup: './src/config/global-setup.ts',
@@ -9,9 +7,10 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : 4,
-  timeout: environment.apiTimeout * 2,
+  timeout: 60_000,
   expect: { timeout: 5_000 },
-  reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
-  use: {},
+  reporter: process.env.CI
+    ? [['github'], ['html', { open: 'never' }]]
+    : [['html', { open: 'never' }]],
   outputDir: 'test-results'
 });

@@ -42,10 +42,28 @@ for (const [path, body] of [
   ['/booking', 'GET, HEAD, POST'],
   ['/booking/1', 'DELETE, GET, HEAD, PATCH, PUT']
 ] as const) {
-  test(`should describe supported methods for OPTIONS ${path}`, async ({ apiClient }) => {
+  test(`[observed] should describe supported methods for OPTIONS ${path}`, async ({
+    apiClient
+  }) => {
     const response = await apiClient.request('OPTIONS', path);
 
     expect(response.status()).toBe(200);
     expect(await response.text()).toBe(body);
+  });
+}
+
+for (const [method, path, expectedStatus] of [
+  ['PUT', '/booking', 404],
+  ['DELETE', '/booking', 404],
+  ['POST', '/booking/1', 404],
+  ['HEAD', '/booking', 200],
+  ['HEAD', '/booking/999999999', 404]
+] as const) {
+  test(`[observed] should return the observed status for ${method} ${path}`, async ({
+    apiClient
+  }) => {
+    const response = await apiClient.request(method, path);
+
+    expect(response.status()).toBe(expectedStatus);
   });
 }

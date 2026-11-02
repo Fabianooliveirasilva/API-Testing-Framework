@@ -1,6 +1,6 @@
 import type { JSONSchemaType } from 'ajv';
 
-import type { Booking, BookingId, BookingResponse } from '../types/booking.types.js';
+import type { BookingId, BookingResponse } from '../types/booking.types.js';
 import { bookingSchema } from './booking.schema.js';
 
 export const bookingResponseSchema: JSONSchemaType<BookingResponse> = {
@@ -9,7 +9,7 @@ export const bookingResponseSchema: JSONSchemaType<BookingResponse> = {
   additionalProperties: false,
   properties: {
     bookingid: { type: 'integer' },
-    booking: bookingSchema as JSONSchemaType<Booking>
+    booking: bookingSchema
   }
 };
 
