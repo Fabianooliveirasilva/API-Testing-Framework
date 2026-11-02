@@ -1,0 +1,489 @@
+{
+  "info": {
+    "_postman_id": "d0d5f0d7-0b44-4c7a-8b84-7b6e4a70f4b1",
+    "name": "Restful Booker API - Exploratory Collection",
+    "description": "Manual and exploratory coverage that complements the automated Playwright suite. Statuses marked observed are based on docs/api-behavior-notes.md and may change as the public service changes.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const expectedStatus = pm.variables.get('expectedStatus');",
+          "pm.test(`status is ${expectedStatus}`, () => pm.response.to.have.status(Number(expectedStatus)));",
+          "pm.test('response time is a recorded measurement', () => pm.expect(pm.response.responseTime).to.be.a('number').and.to.be.at.least(0));",
+          "pm.test('content type is present', () => pm.expect(pm.response.headers.get('Content-Type')).to.be.a('string').and.not.empty);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://restful-booker.herokuapp.com"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "bookingId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Create token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"{{username}}\",\"password\":\"{{password}}\"}"
+            },
+            "url": "{{baseUrl}}/auth",
+            "description": "Documented authentication flow. Credentials are read from the environment and are never logged."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('response has a token string', () => { pm.expect(body).to.have.property('token'); pm.expect(body.token).to.be.a('string').and.not.empty; });",
+                  "pm.collectionVariables.set('token', body.token);",
+                  "pm.environment.set('token', body.token);"
+                ]
+              }
+            }
+          ],
+          "variable": [
+            {
+              "key": "expectedStatus",
+              "value": "200"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Get all",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/booking",
+            "description": "Documented list endpoint. Do not assert shared-list count or contents; only assert the array and item types."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('response is a booking ID array', () => { pm.expect(body).to.be.an('array'); body.forEach(item => { pm.expect(item).to.have.property('bookingid'); pm.expect(item.bookingid).to.be.a('number'); }); });"
+                ]
+              }
+            }
+          ],
+          "variable": [
+            {
+              "key": "expectedStatus",
+              "value": "200"
+            }
+          ]
+        },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Postman Exploratory\",\"lastname\":\"Booking\",\"totalprice\":120,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2025-01-01\",\"checkout\":\"2025-01-10\"},\"additionalneeds\":\"Breakfast\"}"
+            },
+            "url": "{{baseUrl}}/booking",
+            "description": "Documented creation request. The generated booking ID is saved before response assertions so later requests and cleanup use only this resource."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('bookingId', String(body.bookingid));",
+                  "pm.environment.set('bookingId', String(body.bookingid));",
+                  "pm.test('response has booking ID and booking object', () => { pm.expect(body.bookingid).to.be.a('number'); pm.expect(body.booking).to.be.an('object'); pm.expect(body.booking.firstname).to.be.a('string'); pm.expect(body.booking.bookingdates.checkin).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "variable": [
+            {
+              "key": "expectedStatus",
+              "value": "200"
+            }
+          ]
+        },
+        {
+          "name": "Get by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/booking/{{bookingId}}",
+            "description": "Documented retrieval of the booking created by this collection."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('response has the booking contract', () => { ['firstname', 'lastname', 'totalprice', 'depositpaid', 'bookingdates'].forEach(key => pm.expect(body).to.have.property(key)); pm.expect(body.firstname).to.be.a('string'); pm.expect(body.lastname).to.be.a('string'); pm.expect(body.totalprice).to.be.a('number'); pm.expect(body.depositpaid).to.be.a('boolean'); pm.expect(body.bookingdates.checkin).to.be.a('string'); pm.expect(body.bookingdates.checkout).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "variable": [
+            {
+              "key": "expectedStatus",
+              "value": "200"
+            }
+          ]
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Postman Updated\",\"lastname\":\"Booking\",\"totalprice\":150,\"depositpaid\":false,\"bookingdates\":{\"checkin\":\"2025-01-02\",\"checkout\":\"2025-01-11\"},\"additionalneeds\":\"Lunch\"}"
+            },
+            "url": "{{baseUrl}}/booking/{{bookingId}}",
+            "description": "Documented full update using the cookie token created by this collection."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('response has updated booking types', () => { pm.expect(body.firstname).to.be.a('string'); pm.expect(body.lastname).to.be.a('string'); pm.expect(body.totalprice).to.be.a('number'); pm.expect(body.depositpaid).to.be.a('boolean'); pm.expect(body.bookingdates.checkin).to.be.a('string'); pm.expect(body.bookingdates.checkout).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "variable": [
+            {
+              "key": "expectedStatus",
+              "value": "200"
+            }
+          ]
+        },
+        {
+          "name": "Partial update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstname\":\"Postman Patched\"}"
+            },
+            "url": "{{baseUrl}}/booking/{{bookingId}}",
+            "description": "Documented partial update using the collection-created booking and token."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('response preserves the booking contract', () => { pm.expect(body.firstname).to.be.a('string'); pm.expect(body.lastname).to.be.a('string'); pm.expect(body.totalprice).to.be.a('number'); pm.expect(body.depositpaid).to.be.a('boolean'); pm.expect(body.bookingdates).to.be.an('object'); });"
+                ]
+              }
+            }
+          ],
+          "variable": [
+            {
+              "key": "expectedStatus",
+              "value": "200"
+            }
+          ]
+        },
+        {
+          "name": "Negative",
+          "item": [
+            {
+              "name": "[observed] Invalid credentials",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"username\":\"invalid-user\",\"password\":\"invalid-password\"}"
+                },
+                "url": "{{baseUrl}}/auth",
+                "description": "[observed] Invalid credentials return HTTP 200 with a JSON reason instead of an HTTP error, as recorded in docs/api-behavior-notes.md."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();",
+                      "pm.test('response has the observed reason', () => { pm.expect(body.reason).to.eql('Bad credentials'); pm.expect(body.reason).to.be.a('string'); });"
+                    ]
+                  }
+                }
+              ],
+              "variable": [
+                {
+                  "key": "expectedStatus",
+                  "value": "200"
+                }
+              ]
+            },
+            {
+              "name": "[observed] Missing fields",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firstname\":\"Missing Fields\",\"lastname\":\"Booking\",\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2025-01-01\",\"checkout\":\"2025-01-10\"}}"
+                },
+                "url": "{{baseUrl}}/booking",
+                "description": "[observed] Missing totalprice returned HTTP 500 and text/plain Internal Server Error in the recorded run. This request is exploratory and should not be treated as a desired validation contract."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('observed error body is Internal Server Error', () => pm.expect(pm.response.text()).to.eql('Internal Server Error'));"
+                    ]
+                  }
+                }
+              ],
+              "variable": [
+                {
+                  "key": "expectedStatus",
+                  "value": "500"
+                }
+              ]
+            },
+            {
+              "name": "[observed] Malformed JSON",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firstname\":\"Malformed\""
+                },
+                "url": "{{baseUrl}}/booking",
+                "description": "[observed] Malformed JSON returned HTTP 400 with Bad Request in the recorded run."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('observed error body is Bad Request', () => pm.expect(pm.response.text()).to.eql('Bad Request'));"
+                    ]
+                  }
+                }
+              ],
+              "variable": [
+                {
+                  "key": "expectedStatus",
+                  "value": "400"
+                }
+              ]
+            },
+            {
+              "name": "[observed] No token",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firstname\":\"Should Not Persist\"}"
+                },
+                "url": "{{baseUrl}}/booking/{{bookingId}}",
+                "description": "[observed] Protected mutation without a token returned HTTP 403 Forbidden. Run after Create and before Delete."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('observed body is Forbidden', () => pm.expect(pm.response.text()).to.eql('Forbidden'));"
+                    ]
+                  }
+                }
+              ],
+              "variable": [
+                {
+                  "key": "expectedStatus",
+                  "value": "403"
+                }
+              ]
+            },
+            {
+              "name": "[observed] Invalid token",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Cookie",
+                    "value": "token=invalid-token"
+                  }
+                ],
+                "url": "{{baseUrl}}/booking/{{bookingId}}",
+                "description": "[observed] Protected deletion with an invalid token returned HTTP 403 Forbidden. Run after Create and before Delete."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('observed body is Forbidden', () => pm.expect(pm.response.text()).to.eql('Forbidden'));"
+                    ]
+                  }
+                }
+              ],
+              "variable": [
+                {
+                  "key": "expectedStatus",
+                  "value": "403"
+                }
+              ]
+            },
+            {
+              "name": "[observed] Non-existing ID",
+              "request": {
+                "method": "GET",
+                "url": "{{baseUrl}}/booking/{{bookingId}}999999",
+                "description": "[observed] A non-existing booking ID returned HTTP 404 Not Found. The path is derived from the collection-created ID and does not mutate a resource."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('observed body is Not Found', () => pm.expect(pm.response.text()).to.eql('Not Found'));"
+                    ]
+                  }
+                }
+              ],
+              "variable": [
+                {
+                  "key": "expectedStatus",
+                  "value": "404"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "token={{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/booking/{{bookingId}}",
+            "description": "Final lifecycle step. Deletes only the booking created by this collection; run this after all other Bookings requests."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('delete response body is Created', () => pm.expect(pm.response.text()).to.eql('Created'));"
+                ]
+              }
+            }
+          ],
+          "variable": [
+            {
+              "key": "expectedStatus",
+              "value": "201"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

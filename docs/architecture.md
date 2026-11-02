@@ -36,6 +36,26 @@ execution. Tests consume typed clients and utilities through Playwright fixtures
 4. Playwright returns the original `APIResponse`; the test or response utility performs assertions.
 5. Contract checks pass the decoded response body to the cached Ajv validator.
 
+## Postman exploratory collection
+
+The Postman collection in [`postman/api-testing-collection.json`](../postman/api-testing-collection.json)
+provides manual and exploratory API coverage that complements the automated Playwright suite. It
+chains authentication and booking creation, uses only the booking created in that run for mutations,
+and deletes that booking in the final lifecycle step. Requests named `[observed]` document behavior
+captured from the public service rather than prescribing a desired contract.
+
+To use it, import both the collection and
+[`postman/environments/local-environment.json`](../postman/environments/local-environment.json)
+into Postman, select the environment, and fill in `username` and `password` locally. Run the
+collection with the Collection Runner in its displayed order so the token and booking ID variables
+are chained before protected requests and cleanup. The environment is safe to push because it
+contains no credentials or tokens. Newman can optionally run the same collection without adding a
+project dependency:
+
+```bash
+npx newman run postman/api-testing-collection.json -e postman/environments/local-environment.json
+```
+
 ## Authentication
 
 Credentials are read only from environment variables. Authentication responses are checked for a
